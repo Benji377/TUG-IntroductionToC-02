@@ -215,7 +215,7 @@ First, the user is asked if they want to see it:
 
 ```
 Show the initial state? ("yes"/"no"):\n
- >
+ > 
 ```
 
 Valid inputs are `yes` or `no`. 
@@ -316,7 +316,7 @@ After the input data has been provided to the program and, optionally, the initi
 
 ```
 Start the simulation? ("start"/"skip"):\n
- >
+ > 
 ```
 Valid inputs are `start` or `skip`. 
 If the user input is invalid, the program should **not** print an error message and just repeat the question and the command prompt until a valid command is entered.
@@ -330,7 +330,7 @@ The user has the option to view an illustration of the hotel for each step of th
 
 ```
 Show all steps of the simulation? ("all steps"/"end result"):\n
- >
+ > 
 ```
 
 Valid inputs are `all steps` or `end result`. If the user input is invalid, the program should **not**

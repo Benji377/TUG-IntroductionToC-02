@@ -24,7 +24,7 @@
 < 4
 > Enter the destination floors of the people [floor: 0]:
 ?  > 
-< 1,2,3,4 
+< 1,2,3,4
 > Enter the destination floors of the people [floor: 1]:
 ?  > 
 < 0,2,3,4
