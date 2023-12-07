@@ -37,10 +37,12 @@ void getNumberOfElevatorsInput(char *hotel_name, int *number_of_elevators);
 void getElevatorsCapacityInput(char *hotel_name, int *elevator_capacity);
 void getNumberOfPeopleWaitingOnEachFloor(int *number_of_people_waiting);
 Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiting);
+int *getDestinationFloorInput(int number_of_floors, int floor);
 Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, int number_of_floors);
 int showInitialStateInput();
 void printHotel(char *hotel_name, int number_of_floors, int number_of_elevators,
 								Person **person_list, int number_of_people, Elevator *elevators);
+int startSimulationInput();
 int shouldPrintAllSteps();
 int allGuestsHaveReachedDestination(Person **person_list, int number_of_people, int number_of_floors);
 void simulationStep(int number_of_floors, int number_of_elevators,
@@ -51,9 +53,19 @@ void freeAllocatedMemory(int number_of_floors, Person **person_list, Elevator *e
 void changeElevatorDirection(int number_of_floors, int number_of_elevators, Elevator *elevators);
 
 // String helper functions
-int *splitStringByComma(char *input_string);
+int *splitStringByComma(char *input_string, int *size);
 int stringLength(const char *input_string);
 int areStringsEqual(const char *first_string, const char *second_string);
+
+// Constants
+const int MAX_NUMBER_OF_FLOORS = 10;
+const int MIN_NUMBER_OF_FLOORS = 3;
+const int MAX_NUMBER_OF_ELEVATORS = 5;
+const int MIN_NUMBER_OF_ELEVATORS = 1;
+const int MAX_ELEVATOR_CAPACITY = 9;
+const int MIN_ELEVATOR_CAPACITY = 1;
+const int MAX_NUMBER_OF_PEOPLE_WAITING = 20;
+const int MIN_NUMBER_OF_PEOPLE_WAITING = 2;
 
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -87,34 +99,34 @@ int main()
 
 	// Show initial state
 	int showInitialState = showInitialStateInput();
-	if (showInitialState == 1)
+	if (showInitialState)
 	{
 		printHotel(hotel_name, number_of_floors, number_of_elevators, person_list,
 							 number_of_people_waiting, elevator_list);
 	}
 
-	// Start simulation
-	printf("Start the simulation? (\"start\"/\"skip\"):\n > ");
-	char startSimulation[10];
-	scanf("%s", startSimulation);
-	if (areStringsEqual(startSimulation, "start"))
+	int start_simulation = startSimulationInput();
+	if (start_simulation)
 	{
 		int printSteps = shouldPrintAllSteps();
-
-
+		int steps_counter = 0;
 		// As long as not all guests have reached their destination, keep simulating
 		while (!allGuestsHaveReachedDestination(person_list, number_of_people_waiting, number_of_floors))
 		{
 			simulationStep(number_of_floors, number_of_elevators, person_list,
 										 number_of_people_waiting, elevator_list);
-			if (printSteps == 1)
+			if (printSteps)
 			{
 				printHotel(hotel_name, number_of_floors, number_of_elevators, person_list,
 									 number_of_people_waiting, elevator_list);
 			}
+			steps_counter++;
 		}
+		printf("\n=================\n   FINAL STATE\n=================\n");
 		printHotel(hotel_name, number_of_floors, number_of_elevators, person_list,
 							 number_of_people_waiting, elevator_list);
+
+		printf("Simulation done in %i steps!", steps_counter);
 
 		freeAllocatedMemory(number_of_floors, person_list, elevator_list);
 		return 0;
@@ -125,7 +137,6 @@ int main()
 		return 0;
 	}
 }
-
 
 void getHotelNameInput(char *hotel_name)
 {
@@ -140,6 +151,15 @@ void getHotelNameInput(char *hotel_name)
 	// User inputs
 	printf("Enter the name of the hotel:\n > ");
 	scanf("%s", hotel_name);
+	// String to all uppercase without string.h library with ASCII table values
+	// hotel_name is an array of characters, so it is a pointer to the first character
+	for (int i = 0; hotel_name[i] != '\0'; ++i)
+	{
+		if (hotel_name[i] >= 'a' && hotel_name[i] <= 'z')
+		{
+			hotel_name[i] -= 32;
+		}
+	}
 }
 
 void getNumberOfFloorsInput(char *hotel_name, int *number_of_floors)
@@ -148,11 +168,12 @@ void getNumberOfFloorsInput(char *hotel_name, int *number_of_floors)
 	{
 		printf("Enter the number of floors in hotel %s:\n > ", hotel_name);
 		scanf("%d", number_of_floors);
-		if ((*number_of_floors) < 3 || (*number_of_floors) > 10)
+		if ((*number_of_floors) < MIN_NUMBER_OF_FLOORS || (*number_of_floors) > MAX_NUMBER_OF_FLOORS)
 		{
-			printf("Wrong input, the number of floors must be between 3 and 10!\n");
+			printf("Wrong input, the number of floors must be between %i and %i!\n", MIN_NUMBER_OF_FLOORS,
+						 MAX_NUMBER_OF_FLOORS);
 		}
-	} while ((*number_of_floors) < 3 || (*number_of_floors) > 10);
+	} while ((*number_of_floors) < MIN_NUMBER_OF_FLOORS || (*number_of_floors) > MAX_NUMBER_OF_FLOORS);
 }
 
 void getNumberOfElevatorsInput(char *hotel_name, int *number_of_elevators)
@@ -161,10 +182,11 @@ void getNumberOfElevatorsInput(char *hotel_name, int *number_of_elevators)
 	{
 		printf("Enter the number of elevators in hotel %s:\n > ", hotel_name);
 		scanf("%d", number_of_elevators);
-		if ((*number_of_elevators) < 1 || (*number_of_elevators) > 5) {
-			printf("Wrong input, the number of elevators must be between 1 and 5!\n");
+		if ((*number_of_elevators) < MIN_NUMBER_OF_ELEVATORS || (*number_of_elevators) > MAX_NUMBER_OF_ELEVATORS) {
+			printf("Wrong input, the number of elevators must be between %i and %i!\n", MIN_NUMBER_OF_ELEVATORS,
+						 MAX_NUMBER_OF_ELEVATORS);
 		}
-	} while ((*number_of_elevators) < 1 || (*number_of_elevators) > 5);
+	} while ((*number_of_elevators) < MIN_NUMBER_OF_ELEVATORS || (*number_of_elevators) > MAX_NUMBER_OF_ELEVATORS);
 }
 
 void getElevatorsCapacityInput(char *hotel_name, int *elevator_capacity)
@@ -173,11 +195,12 @@ void getElevatorsCapacityInput(char *hotel_name, int *elevator_capacity)
 	{
 		printf("Enter the capacity of elevators in hotel %s:\n > ", hotel_name);
 		scanf("%d", elevator_capacity);
-		if ((*elevator_capacity) < 1 || (*elevator_capacity) > 9)
+		if ((*elevator_capacity) < MIN_ELEVATOR_CAPACITY || (*elevator_capacity) > MAX_ELEVATOR_CAPACITY)
 		{
-			printf("Wrong input, the capacity of elevators must be between 1 and 9 person(s)!\n");
+			printf("Wrong input, the capacity of elevators must be between %i and %i person(s)!\n",
+						 MIN_ELEVATOR_CAPACITY, MAX_ELEVATOR_CAPACITY);
 		}
-	} while ((*elevator_capacity) < 1 || (*elevator_capacity) > 9);
+	} while ((*elevator_capacity) < MIN_ELEVATOR_CAPACITY || (*elevator_capacity) > MAX_ELEVATOR_CAPACITY);
 }
 
 void getNumberOfPeopleWaitingOnEachFloor(int *number_of_people_waiting)
@@ -185,11 +208,14 @@ void getNumberOfPeopleWaitingOnEachFloor(int *number_of_people_waiting)
 	do {
 		printf("Enter the number of people waiting on each floor:\n > ");
 		scanf("%d", number_of_people_waiting);
-		if ((*number_of_people_waiting) < 2 || (*number_of_people_waiting) > 20)
+		if ((*number_of_people_waiting) < MIN_NUMBER_OF_PEOPLE_WAITING ||
+				(*number_of_people_waiting) > MAX_NUMBER_OF_PEOPLE_WAITING)
 		{
-			printf("Wrong input, the number of people waiting on each floor must be between 2 and 20!\n");
+			printf("Wrong input, the number of people waiting on each floor must be between %i and %i!\n",
+						 MIN_NUMBER_OF_PEOPLE_WAITING, MAX_NUMBER_OF_PEOPLE_WAITING);
 		}
-	} while ((*number_of_people_waiting) < 2 || (*number_of_people_waiting) > 20);
+	} while ((*number_of_people_waiting) < MIN_NUMBER_OF_PEOPLE_WAITING ||
+					 (*number_of_people_waiting) > MAX_NUMBER_OF_PEOPLE_WAITING);
 }
 
 Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiting)
@@ -199,11 +225,7 @@ Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiti
 	for (int floor = 0; floor < number_of_floors; ++floor)
 	{
 		person_list[floor] = malloc(number_of_people_waiting * sizeof(Person));
-		printf("Enter the destination floors of the people [floor: %d]:\n > ", floor);
-
-		char buffer[100];
-		scanf("%s", buffer);
-		int *splitInput = splitStringByComma(buffer);
+		int *splitInput = getDestinationFloorInput(number_of_floors, floor);
 
 		for (int guest_on_floor = 0; guest_on_floor < number_of_people_waiting; ++guest_on_floor)
 		{
@@ -214,8 +236,43 @@ Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiti
 			person->has_reached_destination_ = 0;
 			person_list[floor][guest_on_floor] = *person;
 		}
+		free(splitInput);
 	}
 	return person_list;
+}
+
+int *getDestinationFloorInput(int number_of_floors, int floor)
+{
+	int *splitInput;
+	int input_size;
+	int errors;
+	do {
+		printf("Enter the destination floors of the people [floor: %d]:\n > ", floor);
+
+		char buffer[100];
+		scanf("%99s", buffer);
+		// empty the buffer
+		while ((getchar()) != '\n');
+		splitInput = splitStringByComma(buffer, &input_size);
+		errors = 0;
+
+		for (int i = 0; i < input_size; i++)
+		{
+			printf("splitInput[%i] = %i\n", i, splitInput[i]);
+			if (splitInput[i] == floor)
+			{
+				printf("Wrong input, the destination floor cannot be the current floor!\n");
+				errors++;
+			}
+			else if (splitInput[i] < 0 || splitInput[i] >= number_of_floors)
+			{
+				printf("Wrong input, the destination floor %i is out of range (0 to %i)! \n",
+							 splitInput[i], number_of_floors - 1);
+				errors++;
+			}
+		}
+	} while (errors > 0);
+	return splitInput;
 }
 
 Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, int number_of_floors)
@@ -245,9 +302,15 @@ Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, in
 
 int showInitialStateInput()
 {
-	printf("Show the initial state? (\"yes\"/\"no\"):\n > ");
 	char showInitialState[5];
-	scanf("%s", showInitialState);
+	do {
+		printf("Show the initial state? (\"yes\"/\"no\"):\n > ");
+		scanf("%s", showInitialState);
+		// empty the buffer
+		while ((getchar()) != '\n');
+	} while (!areStringsEqual(showInitialState, "yes") ||
+						!areStringsEqual(showInitialState, "no"));
+
 	if (areStringsEqual(showInitialState, "yes"))
 	{
 		printf("\n=================\n  INITIAL STATE\n=================\n");
@@ -309,6 +372,27 @@ void printHotel(char *hotel_name, int number_of_floors, int number_of_elevators,
 	printf("++-----+-----++\n\n");
 }
 
+int startSimulationInput()
+{
+	char startSimulation[10];
+
+	do {
+		printf("Start the simulation? (\"start\"/\"skip\"):\n > ");
+		scanf("%s", startSimulation);
+		// empty the buffer
+		while ((getchar()) != '\n');
+	} while (!areStringsEqual(startSimulation, "start") ||
+					 !areStringsEqual(startSimulation, "skip"));
+	if (areStringsEqual(startSimulation, "start"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 
 int shouldPrintAllSteps()
 {
@@ -320,7 +404,8 @@ int shouldPrintAllSteps()
 		char showAllSteps[20];
 
 		scanf(" %[^\n]s", showAllSteps);
-		printf("Input: %s\n", showAllSteps);
+		// empty the buffer
+		while ((getchar()) != '\n');
 
 		if (areStringsEqual(showAllSteps, "all steps"))
 		{
@@ -473,22 +558,45 @@ int stringLength(const char *input_string)
 }
 
 // A function that takes a string, splits it by comma and returns an array of strings
-int *splitStringByComma(char *input_string)
+int *splitStringByComma(char *input_string, int *size)
 {
-	// A function that takes a string, splits it by the comma separator and returns an array of integers
-	// Without using the string.h library
-	int length = stringLength(input_string);
-	int *split_string = malloc(length * sizeof(int));
-	int split_string_index = 0;
-	for (int i = 0; i < length; ++i)
-	{
-		if (input_string[i] != ',')
-		{
-			split_string[split_string_index] = input_string[i] - '0';
-			++split_string_index;
+	int* array = NULL;  // Initialize the array to NULL
+	*size = 0;          // Initialize the size of the array
+
+	while (*input_string) {
+		// Use strtol to extract integers from the string
+		char *end_ptr;
+		long value = strtol(input_string, &end_ptr, 10);
+
+		// Check for conversion errors
+		if (input_string == end_ptr) {
+			// Conversion failed
+			fprintf(stderr, "Error converting string to integer\n");
+			break;
 		}
+
+		// Increment the size of the array
+		(*size)++;
+
+		// Reallocate memory for the array
+		array = realloc(array, (*size) * sizeof(int));
+		array[*size - 1] = (int)value;
+
+		// Move to the next comma or the end of the string
+		while (*end_ptr && *end_ptr != ',') {
+			end_ptr++;
+		}
+
+		if (*end_ptr == '\0') {
+			break;  // Exit the loop if the end of the string is reached
+		}
+
+		// Move past the comma
+		end_ptr++;
+		input_string = end_ptr;
 	}
-	return split_string;
+
+	return array;
 }
 
 
