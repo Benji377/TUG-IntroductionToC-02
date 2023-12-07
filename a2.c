@@ -54,8 +54,7 @@ void changeElevatorDirection(int number_of_floors, int number_of_elevators, Elev
 
 // String helper functions
 int *splitStringByComma(char *input_string, int *size);
-int stringLength(const char *input_string);
-int areStringsEqual(const char *first_string, const char *second_string);
+int areStringsEqual(char *first_string, char *second_string);
 
 // Constants
 const int MAX_NUMBER_OF_FLOORS = 10;
@@ -258,7 +257,6 @@ int *getDestinationFloorInput(int number_of_floors, int floor)
 
 		for (int i = 0; i < input_size; i++)
 		{
-			printf("splitInput[%i] = %i\n", i, splitInput[i]);
 			if (splitInput[i] == floor)
 			{
 				printf("Wrong input, the destination floor cannot be the current floor!\n");
@@ -308,8 +306,8 @@ int showInitialStateInput()
 		scanf("%s", showInitialState);
 		// empty the buffer
 		while ((getchar()) != '\n');
-	} while (!areStringsEqual(showInitialState, "yes") ||
-						!areStringsEqual(showInitialState, "no"));
+	} while (areStringsEqual(showInitialState, "yes") != 1 ||
+						areStringsEqual(showInitialState, "no") != 1);
 
 	if (areStringsEqual(showInitialState, "yes"))
 	{
@@ -378,11 +376,11 @@ int startSimulationInput()
 
 	do {
 		printf("Start the simulation? (\"start\"/\"skip\"):\n > ");
-		scanf("%s", startSimulation);
+		scanf("%9s", startSimulation);
 		// empty the buffer
 		while ((getchar()) != '\n');
-	} while (!areStringsEqual(startSimulation, "start") ||
-					 !areStringsEqual(startSimulation, "skip"));
+	} while (areStringsEqual(startSimulation, "start") != 1 ||
+					 areStringsEqual(startSimulation, "skip") != 1);
 	if (areStringsEqual(startSimulation, "start"))
 	{
 		return 1;
@@ -403,7 +401,7 @@ int shouldPrintAllSteps()
 		printf("Show all steps of the simulation? (\"all steps\"/\"end result\"):\n > ");
 		char showAllSteps[20];
 
-		scanf(" %[^\n]s", showAllSteps);
+		scanf(" %[^\n]19s", showAllSteps);
 		// empty the buffer
 		while ((getchar()) != '\n');
 
@@ -531,7 +529,7 @@ void changeElevatorDirection(int number_of_floors, int number_of_elevators, Elev
 	}
 }
 
-int areStringsEqual(const char *first_string, const char *second_string)
+int areStringsEqual(char *first_string, char *second_string)
 {
 	while (*first_string != '\0' && *second_string != '\0')
 	{
@@ -546,30 +544,21 @@ int areStringsEqual(const char *first_string, const char *second_string)
 	return *first_string == '\0' && *second_string == '\0';  // Check if both strings reached the end simultaneously
 }
 
-// A function that takes a string and returns its length without using the string.h library
-int stringLength(const char *input_string)
-{
-	int length = 0;
-	while (input_string[length] != '\0')
-	{
-		++length;
-	}
-	return length;
-}
-
 // A function that takes a string, splits it by comma and returns an array of strings
 int *splitStringByComma(char *input_string, int *size)
 {
 	int* array = NULL;  // Initialize the array to NULL
 	*size = 0;          // Initialize the size of the array
 
-	while (*input_string) {
+	while (*input_string)
+	{
 		// Use strtol to extract integers from the string
 		char *end_ptr;
 		long value = strtol(input_string, &end_ptr, 10);
 
 		// Check for conversion errors
-		if (input_string == end_ptr) {
+		if (input_string == end_ptr)
+		{
 			// Conversion failed
 			fprintf(stderr, "Error converting string to integer\n");
 			break;
@@ -583,11 +572,13 @@ int *splitStringByComma(char *input_string, int *size)
 		array[*size - 1] = (int)value;
 
 		// Move to the next comma or the end of the string
-		while (*end_ptr && *end_ptr != ',') {
+		while (*end_ptr && *end_ptr != ',')
+		{
 			end_ptr++;
 		}
 
-		if (*end_ptr == '\0') {
+		if (*end_ptr == '\0')
+		{
 			break;  // Exit the loop if the end of the string is reached
 		}
 
