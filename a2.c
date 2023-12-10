@@ -260,7 +260,9 @@ int *getDestinationFloorInput(int number_of_floors, int floor)
 		printf("Enter the destination floors of the people [floor: %d]:\n > ", floor);
 
 		char buffer[100];
-		fgets(buffer, 100, stdin);
+		scanf("%99s", buffer);
+		// empty the buffer
+		while ((getchar()) != '\n');
 		splitInput = splitStringByComma(buffer, &input_size);
 		errors = 0;
 
@@ -322,7 +324,9 @@ int showInitialStateInput()
 	char showInitialState[5];
 	do {
 		printf("Show the initial state? (\"yes\"/\"no\"):\n > ");
-		fgets(showInitialState, 5, stdin);
+		scanf("%s", showInitialState);
+		// empty the buffer
+		while ((getchar()) != '\n');
 	} while (areStringsEqual(showInitialState, "yes") != 1 &&
 						areStringsEqual(showInitialState, "no") != 1);
 
@@ -485,7 +489,9 @@ int startSimulationInput()
 
 	do {
 		printf("Start the simulation? (\"start\"/\"skip\"):\n > ");
-		fgets(startSimulation, 10, stdin);
+		scanf("%9s", startSimulation);
+		// empty the buffer
+		while ((getchar()) != '\n');
 	} while (areStringsEqual(startSimulation, "start") != 1 &&
 					 areStringsEqual(startSimulation, "skip") != 1);
 	if (areStringsEqual(startSimulation, "start"))
@@ -507,7 +513,10 @@ int shouldPrintAllSteps()
 		// Show all steps or end result
 		printf("Show all steps of the simulation? (\"all steps\"/\"end result\"):\n > ");
 		char showAllSteps[20];
-		fgets(showAllSteps, 20, stdin);
+
+		scanf(" %[^\n]19s", showAllSteps);
+		// empty the buffer
+		while ((getchar()) != '\n');
 
 		if (areStringsEqual(showAllSteps, "all steps"))
 		{
