@@ -41,20 +41,26 @@ int *getDestinationFloorInput(int number_of_floors, int floor);
 Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, int number_of_floors);
 int showInitialStateInput();
 void printHotel(char *hotel_name, int number_of_floors, int number_of_elevators,
-								Person **person_list, int number_of_people, Elevator *elevators);
+								Person **person_list, int number_of_people, Elevator *elevators, int elevator_capacity);
+void printHotelNameDynamic(char *hotel_name, int number_of_elevators);
+void printHotelElevators(const Elevator *elevators, int elevator_capacity, int i, int j);
+void printHotelPersonList(Person *const *person_list, int number_of_people, int i, int j);
+void printElevatorDecorator(int number_of_elevators, int full_line);
 int startSimulationInput();
 int shouldPrintAllSteps();
 int allGuestsHaveReachedDestination(Person **person_list, int number_of_people, int number_of_floors);
-void simulationStep(int number_of_floors, int number_of_elevators,
-										Person **person_list, int number_of_guests, Elevator *elevators);
-void removePeopleFromElevator(int number_of_elevators, Elevator *elevators);
+void simulationStep(int number_of_floors, int number_of_elevators, Person **person_list, int number_of_guests,
+										Elevator *elevators, int elevator_capacity, int show_steps);
+void removePeopleFromElevator(int number_of_elevators, Elevator *elevators, int elevator_capacity,  int show_steps);
 void fillElevatorWithPeople(int number_of_elevators, int number_of_guests, Elevator *elevators, Person **person_list);
 void freeAllocatedMemory(int number_of_floors, Person **person_list, Elevator *elevators);
 void changeElevatorDirection(int number_of_floors, int number_of_elevators, Elevator *elevators);
+void printElevatorState(Elevator *elevator, int number_of_elevators, int elevator_capacity);
 
 // String helper functions
 int *splitStringByComma(char *input_string, int *size);
 int areStringsEqual(char *first_string, char *second_string);
+int getStringLength(const char *string);
 
 // Constants
 const int MAX_NUMBER_OF_FLOORS = 10;
@@ -101,29 +107,34 @@ int main()
 	if (showInitialState)
 	{
 		printHotel(hotel_name, number_of_floors, number_of_elevators, person_list,
-							 number_of_people_waiting, elevator_list);
+							 number_of_people_waiting, elevator_list, elevator_capacity);
+		printf("\n");
 	}
 
 	int start_simulation = startSimulationInput();
 	if (start_simulation)
 	{
 		int printSteps = shouldPrintAllSteps();
-		int steps_counter = 0;
+		int steps_counter = 1;
 		// As long as not all guests have reached their destination, keep simulating
 		while (!allGuestsHaveReachedDestination(person_list, number_of_people_waiting, number_of_floors))
 		{
+			if (printSteps)
+				printf("=== Simulation Step %i ===\n", steps_counter);
 			simulationStep(number_of_floors, number_of_elevators, person_list,
-										 number_of_people_waiting, elevator_list);
+										 number_of_people_waiting, elevator_list,
+										 elevator_capacity, printSteps);
 			if (printSteps)
 			{
 				printHotel(hotel_name, number_of_floors, number_of_elevators, person_list,
-									 number_of_people_waiting, elevator_list);
+									 number_of_people_waiting, elevator_list, elevator_capacity);
+				printElevatorState(elevator_list, number_of_elevators, elevator_capacity);
 			}
 			steps_counter++;
 		}
 		printf("\n=================\n   FINAL STATE\n=================\n");
 		printHotel(hotel_name, number_of_floors, number_of_elevators, person_list,
-							 number_of_people_waiting, elevator_list);
+							 number_of_people_waiting, elevator_list, elevator_capacity);
 
 		printf("Simulation done in %i steps!", steps_counter);
 
@@ -166,7 +177,7 @@ void getNumberOfFloorsInput(char *hotel_name, int *number_of_floors)
 	do
 	{
 		printf("Enter the number of floors in hotel %s:\n > ", hotel_name);
-		scanf("%d", number_of_floors);
+		scanf("%i", number_of_floors);
 		if ((*number_of_floors) < MIN_NUMBER_OF_FLOORS || (*number_of_floors) > MAX_NUMBER_OF_FLOORS)
 		{
 			printf("Wrong input, the number of floors must be between %i and %i!\n", MIN_NUMBER_OF_FLOORS,
@@ -180,7 +191,7 @@ void getNumberOfElevatorsInput(char *hotel_name, int *number_of_elevators)
 	do
 	{
 		printf("Enter the number of elevators in hotel %s:\n > ", hotel_name);
-		scanf("%d", number_of_elevators);
+		scanf("%i", number_of_elevators);
 		if ((*number_of_elevators) < MIN_NUMBER_OF_ELEVATORS || (*number_of_elevators) > MAX_NUMBER_OF_ELEVATORS) {
 			printf("Wrong input, the number of elevators must be between %i and %i!\n", MIN_NUMBER_OF_ELEVATORS,
 						 MAX_NUMBER_OF_ELEVATORS);
@@ -193,7 +204,7 @@ void getElevatorsCapacityInput(char *hotel_name, int *elevator_capacity)
 	do
 	{
 		printf("Enter the capacity of elevators in hotel %s:\n > ", hotel_name);
-		scanf("%d", elevator_capacity);
+		scanf("%i", elevator_capacity);
 		if ((*elevator_capacity) < MIN_ELEVATOR_CAPACITY || (*elevator_capacity) > MAX_ELEVATOR_CAPACITY)
 		{
 			printf("Wrong input, the capacity of elevators must be between %i and %i person(s)!\n",
@@ -206,7 +217,7 @@ void getNumberOfPeopleWaitingOnEachFloor(int *number_of_people_waiting)
 {
 	do {
 		printf("Enter the number of people waiting on each floor:\n > ");
-		scanf("%d", number_of_people_waiting);
+		scanf("%i", number_of_people_waiting);
 		if ((*number_of_people_waiting) < MIN_NUMBER_OF_PEOPLE_WAITING ||
 				(*number_of_people_waiting) > MAX_NUMBER_OF_PEOPLE_WAITING)
 		{
@@ -249,12 +260,15 @@ int *getDestinationFloorInput(int number_of_floors, int floor)
 		printf("Enter the destination floors of the people [floor: %d]:\n > ", floor);
 
 		char buffer[100];
-		scanf("%99s", buffer);
-		// empty the buffer
-		while ((getchar()) != '\n');
+		fgets(buffer, 100, stdin);
 		splitInput = splitStringByComma(buffer, &input_size);
 		errors = 0;
 
+		//if (input_size != number_of_floors)
+		//{
+		//	printf("Wrong input, the number of destination floors must be %i!\n", number_of_floors);
+		//	errors++;
+		//}
 		for (int i = 0; i < input_size; i++)
 		{
 			if (splitInput[i] == floor)
@@ -291,7 +305,12 @@ Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, in
 			elevator->current_floor_ = 0;
 			elevator->direction_ = 1;
 		}
-		elevator->person_list_ = NULL;
+		elevator->person_list_ = malloc(elevator_capacity * sizeof(Person *));
+		for (int j = 0; j < elevator_capacity; ++j)
+		{
+			elevator->person_list_[j] = malloc(sizeof(Person));
+			elevator->person_list_[j] = NULL;
+		}
 
 		elevators[i] = *elevator;
 	}
@@ -303,15 +322,13 @@ int showInitialStateInput()
 	char showInitialState[5];
 	do {
 		printf("Show the initial state? (\"yes\"/\"no\"):\n > ");
-		scanf("%s", showInitialState);
-		// empty the buffer
-		while ((getchar()) != '\n');
-	} while (areStringsEqual(showInitialState, "yes") != 1 ||
+		fgets(showInitialState, 5, stdin);
+	} while (areStringsEqual(showInitialState, "yes") != 1 &&
 						areStringsEqual(showInitialState, "no") != 1);
 
 	if (areStringsEqual(showInitialState, "yes"))
 	{
-		printf("\n=================\n  INITIAL STATE\n=================\n");
+		printf("\n=================\n  INITIAL STATE\n=================\n\n");
 		return 1;
 	}
 	else
@@ -321,53 +338,145 @@ int showInitialStateInput()
 }
 
 void printHotel(char *hotel_name, int number_of_floors, int number_of_elevators,
-								Person **person_list, int number_of_people, Elevator *elevators)
+								Person **person_list, int number_of_people, Elevator *elevators,
+								int elevator_capacity)
 {
-	printf("\n++-----------++\n");
-	printf("++   %s   ++\n", hotel_name);
-	printf("++-----+-----++\n");
-
+	printHotelNameDynamic(hotel_name, number_of_elevators);
+	printElevatorDecorator(number_of_elevators, 1);
 
 	for (int i = number_of_floors - 1; i >= 0; --i)
 	{
-		printf("|");
+		printf("||");
 		for (int j = 0; j < number_of_elevators; ++j)
 		{
-			if (elevators[j].current_floor_ == i)
-			{
-				printf("| [%d] |",
-							 elevators[j].capacity_ - elevators[j].person_list_[elevators[j].capacity_ - 1]->is_inside_elevator_);
-			}
-			else
-			{
-				printf("|     |");
-			}
+			printHotelElevators(elevators, elevator_capacity, i, j);
 		}
 		printf("|  (");
 
 		for (int j = 0; j < number_of_people; ++j)
 		{
-			if (person_list[i][j].current_floor_ == i)
-			{
-				if (person_list[i][j].is_inside_elevator_ == 1 || person_list[i][j].has_reached_destination_ == 1)
-				{
-					printf("-");
-				}
-				else
-				{
-					printf("%d", person_list[i][j].destination_floor_);
-				}
-			}
-			// Print a comma if the guest is not the last one on the current floor
-			if (j != number_of_people - 1)
-			{
-				printf(",");
-			}
+			printHotelPersonList(person_list, number_of_people, i, j);
 		}
 		printf(")\n");
-		printf("||-   -+-   -||\n");
+
+		if (i != 0)
+			printElevatorDecorator(number_of_elevators, 0);
 	}
-	printf("++-----+-----++\n\n");
+	printElevatorDecorator(number_of_elevators, 1);
+}
+
+void printHotelNameDynamic(char *hotel_name, int number_of_elevators)
+{
+	int number_of_minus = number_of_elevators * 5 + number_of_elevators-1;
+	int name_length = getStringLength(hotel_name);
+	int remaining_space = number_of_minus - name_length;
+
+	printf("++");
+	for (int i = 0; i < number_of_minus; ++i)
+	{
+		printf("-");
+	}
+	printf("++\n");
+	printf("++");
+
+	if (remaining_space > 0)
+	{
+		if (remaining_space % 2 != 0)
+		{
+			for (int i = 0; i < remaining_space / 2; ++i)
+			{
+				printf(" ");
+			}
+			printf("%s", hotel_name);
+			for (int i = 0; i < remaining_space / 2+1; ++i)
+			{
+				printf(" ");
+			}
+		}
+		else {
+			for (int i = 0; i < remaining_space / 2; ++i)
+			{
+				printf(" ");
+			}
+			printf("%s", hotel_name);
+			for (int i = 0; i < remaining_space / 2; ++i)
+			{
+				printf(" ");
+			}
+		}
+	}
+	else
+	{
+		printf("%s", hotel_name);
+	}
+	printf("++\n");
+}
+
+void printElevatorDecorator(int number_of_elevators, int full_line)
+{
+	if (full_line)
+	{
+		printf("++");
+	}
+	else
+	{
+		printf("||");
+	}
+	for (int j = 0; j < number_of_elevators; ++j)
+	{
+		if (full_line)
+		{
+			printf("-----");
+		}
+		else
+		{
+			printf("-   -");
+		}
+		if (j != number_of_elevators - 1)
+		{
+			printf("+");
+		}
+	}
+	if (full_line)
+	{
+		printf("++\n");
+	}
+	else
+	{
+		printf("||\n");
+	}
+}
+
+void printHotelPersonList(Person *const *person_list, int number_of_people, int i, int j)
+{
+	if (person_list[i][j].current_floor_ == i)
+	{
+		if (person_list[i][j].is_inside_elevator_ == 1 || person_list[i][j].has_reached_destination_ == 1)
+		{
+			printf("-");
+		}
+		else
+		{
+			printf("%d", person_list[i][j].destination_floor_);
+		}
+	}
+	// Print a comma if the guest is not the last one on the current floor
+	if (j != number_of_people - 1)
+	{
+		printf(",");
+	}
+}
+
+void printHotelElevators(const Elevator *elevators, int elevator_capacity, int i, int j)
+{
+	if (elevators[j].current_floor_ == i)
+	{
+		printf(" [%d] |", elevator_capacity - elevators[j].capacity_);
+	}
+	else
+	{
+		printf("     |");
+	}
 }
 
 int startSimulationInput()
@@ -376,10 +485,8 @@ int startSimulationInput()
 
 	do {
 		printf("Start the simulation? (\"start\"/\"skip\"):\n > ");
-		scanf("%9s", startSimulation);
-		// empty the buffer
-		while ((getchar()) != '\n');
-	} while (areStringsEqual(startSimulation, "start") != 1 ||
+		fgets(startSimulation, 10, stdin);
+	} while (areStringsEqual(startSimulation, "start") != 1 &&
 					 areStringsEqual(startSimulation, "skip") != 1);
 	if (areStringsEqual(startSimulation, "start"))
 	{
@@ -400,10 +507,7 @@ int shouldPrintAllSteps()
 		// Show all steps or end result
 		printf("Show all steps of the simulation? (\"all steps\"/\"end result\"):\n > ");
 		char showAllSteps[20];
-
-		scanf(" %[^\n]19s", showAllSteps);
-		// empty the buffer
-		while ((getchar()) != '\n');
+		fgets(showAllSteps, 20, stdin);
 
 		if (areStringsEqual(showAllSteps, "all steps"))
 		{
@@ -412,10 +516,6 @@ int shouldPrintAllSteps()
 		} else if (areStringsEqual(showAllSteps, "end result"))
 		{
 			break;
-		}
-		else
-		{
-			printf("Invalid input. Please enter either \"all steps\" or \"end result\".\n");
 		}
 	}
 	return printSteps;
@@ -437,13 +537,13 @@ int allGuestsHaveReachedDestination(Person **person_list, int number_of_people, 
 	return 1;
 }
 
-void simulationStep(int number_of_floors, int number_of_elevators,
-										Person **person_list, int number_of_guests, Elevator *elevators)
+void simulationStep(int number_of_floors, int number_of_elevators, Person **person_list, int number_of_guests,
+										Elevator *elevators, int elevator_capacity, int show_steps)
 {
 
 	// For each guest in the elevator, check if the guest has reached their destination floor
 	// If the guest has reached their destination floor, remove them from the elevator
-	removePeopleFromElevator(number_of_elevators, elevators);
+	removePeopleFromElevator(number_of_elevators, elevators, elevator_capacity, show_steps);
 
 	// For each guest on the same floor as the elevator, check if the elevator is going in their direction_
 	// If the elevator is going in their direction, check if there is space in the elevator
@@ -459,19 +559,27 @@ void simulationStep(int number_of_floors, int number_of_elevators,
 	}
 }
 
-void removePeopleFromElevator(int number_of_elevators, Elevator *elevators)
+void removePeopleFromElevator(int number_of_elevators, Elevator *elevators, int elevator_capacity, int show_steps)
 {
 	for (int i = 0; i < number_of_elevators; ++i)
 	{
-		for (int j = 0; j < elevators[i].capacity_; ++j)
+		for (int j = 0; j < elevator_capacity; ++j)
 		{
-			if (elevators[i].person_list_[j]->has_reached_destination_ == 1)
+			if (elevators[i].person_list_[j] == NULL)
+			{
+				continue;
+			}
+			if (elevators[i].person_list_[j]->destination_floor_ == elevators[i].current_floor_)
 			{
 				elevators[i].person_list_[j]->is_inside_elevator_ = 0;
 				elevators[i].person_list_[j]->has_reached_destination_ = 1;
-				printf("A person reached their destination floor %d with elevator %d.\n",
-							 elevators[i].current_floor_, i);
+				if (show_steps)
+				{
+					printf("\nA person reached their destination floor %d with elevator %d.\n",
+								 elevators[i].current_floor_, i);
+				}
 				elevators[i].person_list_[j] = NULL;
+				elevators[i].capacity_++;
 			}
 		}
 	}
@@ -484,15 +592,21 @@ void fillElevatorWithPeople(int number_of_elevators, int number_of_guests, Eleva
 		for (int j = 0; j < number_of_guests; ++j)
 		{
 			if (elevators[i].direction_ == 1 &&
-					person_list[elevators[i].current_floor_][j].destination_floor_ > elevators[i].current_floor_)
+					person_list[elevators[i].current_floor_][j].destination_floor_ > elevators[i].current_floor_ &&
+					elevators[i].capacity_ > 0)
 			{
+				if (person_list[elevators[i].current_floor_][j].is_inside_elevator_ == 1)
+				{
+					continue;
+				}
 				for (int k = 0; k < elevators[i].capacity_; ++k)
 				{
-					if (elevators[i].person_list_[k]->is_inside_elevator_ == 0 &&
-							elevators[i].person_list_[k]->has_reached_destination_ == 0)
+					if (elevators[i].person_list_[k] == NULL)
 					{
+						elevators[i].person_list_[k] = malloc(sizeof(Person));
 						elevators[i].person_list_[k] = &person_list[elevators[i].current_floor_][j];
 						person_list[elevators[i].current_floor_][j].is_inside_elevator_ = 1;
+						elevators[i].capacity_--;
 						break;
 					}
 				}
@@ -500,12 +614,18 @@ void fillElevatorWithPeople(int number_of_elevators, int number_of_guests, Eleva
 			else if (elevators[i].direction_ == -1 &&
 							 person_list[elevators[i].current_floor_][j].destination_floor_ < elevators[i].current_floor_)
 			{
+				if (person_list[elevators[i].current_floor_][j].is_inside_elevator_ == 1)
+				{
+					continue;
+				}
 				for (int k = 0; k < elevators[i].capacity_; ++k)
 				{
-					if (elevators[i].person_list_[k]->is_inside_elevator_ == 0 &&
-							elevators[i].person_list_[k]->has_reached_destination_ == 0) {
+					if (elevators[i].person_list_[k] == NULL)
+					{
+						elevators[i].person_list_[k] = malloc(sizeof(Person));
 						elevators[i].person_list_[k] = &person_list[elevators[i].current_floor_][j];
 						person_list[elevators[i].current_floor_][j].is_inside_elevator_ = 1;
+						elevators[i].capacity_--;
 						break;
 					}
 				}
@@ -529,6 +649,28 @@ void changeElevatorDirection(int number_of_floors, int number_of_elevators, Elev
 	}
 }
 
+void printElevatorState(Elevator *elevator, int number_of_elevators, int elevator_capacity)
+{
+	printf("Elevators:\n");
+	for (int i = 0; i < number_of_elevators; ++i)
+	{
+		if (elevator[i].capacity_ != elevator_capacity)
+		{
+			printf("%i: (", i);
+			for (int j = 0; j < elevator_capacity; ++j)
+			{
+				if (elevator[i].person_list_[j] == NULL)
+				{
+					continue;
+				}
+				printf("%i,", elevator[i].person_list_[j]->destination_floor_);
+			}
+			printf(")\n");
+		}
+	}
+}
+
+
 int areStringsEqual(char *first_string, char *second_string)
 {
 	while (*first_string != '\0' && *second_string != '\0')
@@ -540,7 +682,6 @@ int areStringsEqual(char *first_string, char *second_string)
 		++first_string;
 		++second_string;
 	}
-	printf("String are equal: %i\n", *first_string == '\0' && *second_string == '\0');
 	return *first_string == '\0' && *second_string == '\0';  // Check if both strings reached the end simultaneously
 }
 
@@ -590,6 +731,15 @@ int *splitStringByComma(char *input_string, int *size)
 	return array;
 }
 
+int getStringLength(const char *string)
+{
+	int length = 0;
+	while (string[length] != '\0')
+	{
+		length++;
+	}
+	return length;
+}
 
 
 void freeAllocatedMemory(int number_of_floors, Person **person_list, Elevator *elevators)
