@@ -85,13 +85,12 @@ const int MIN_NUMBER_OF_PEOPLE_WAITING = 2;
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// The main function of the program. It takes the user input and calls the functions to initialize the hotel and
-/// simulate the elevator operation.
-///
+/// simulate the elevator operation. At the end, it also makes sure to free the allocated memory.
 ///
 /// @return
 ///     0 - Simulation not started
 ///     -1 - Memory allocation error
-///      number of steps - Simulation completed successfully
+///     number of steps - Simulation completed successfully
 //
 int main()
 {
@@ -108,7 +107,15 @@ int main()
 	getNumberOfPeopleWaitingOnEachFloor(&number_of_people_waiting);
 	// Initialize the struct arrays
 	Person **person_list = initializeListOfPeople(number_of_floors, number_of_people_waiting);
+	if (person_list == NULL)
+	{
+		return -1;
+	}
 	Elevator *elevator_list = initializeElevators(number_of_elevators, elevator_capacity, number_of_floors);
+	if (elevator_list == NULL)
+	{
+		return -1;
+	}
 	if (showInitialStateInput())
 	{
 		printHotel(hotel_name, number_of_floors, number_of_elevators, person_list,
@@ -160,7 +167,8 @@ int main()
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that takes the name of the hotel as input and converts it to uppercase.
+/// A function that takes the name of the hotel as input and converts it to uppercase, then saves it
+/// in the hotel_name variable passed as a parameter.
 ///
 /// @param hotel_name - The name of the hotel
 //
@@ -188,7 +196,8 @@ void getHotelNameInput(char *hotel_name)
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that takes the number of floors of the hotel as input and checks if it is in the range of
-/// MIN_NUMBER_OF_FLOORS and MAX_NUMBER_OF_FLOORS.
+/// MIN_NUMBER_OF_FLOORS and MAX_NUMBER_OF_FLOORS. If it is, it saves it in the number_of_floors variable passed as a
+/// parameter. Else it asks the user to enter a new number of floors.
 ///
 /// @param hotel_name - The name of the hotel
 /// @param number_of_floors - The number of floors of the hotel
@@ -210,7 +219,8 @@ void getNumberOfFloorsInput(char *hotel_name, int *number_of_floors)
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that takes the number of elevators of the hotel as input and checks if it is in the range of
-/// MIN_NUMBER_OF_ELEVATORS and MAX_NUMBER_OF_ELEVATORS.
+/// MIN_NUMBER_OF_ELEVATORS and MAX_NUMBER_OF_ELEVATORS. If it is, it saves it in the number_of_elevators variable
+/// passed as a parameter. Else it asks the user to enter a new number of elevators.
 ///
 /// @param hotel_name - The name of the hotel
 /// @param number_of_elevators - The number of elevators of the hotel
@@ -233,7 +243,8 @@ void getNumberOfElevatorsInput(char *hotel_name, int *number_of_elevators)
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that takes the capacity of elevators of the hotel as input and checks if it is in the range of
-/// MIN_ELEVATOR_CAPACITY and MAX_ELEVATOR_CAPACITY.
+/// MIN_ELEVATOR_CAPACITY and MAX_ELEVATOR_CAPACITY. If it is, it saves it in the elevator_capacity variable passed as a
+/// parameter. Else it asks the user to enter a new capacity of elevators.
 ///
 /// @param hotel_name - The name of the hotel
 /// @param elevator_capacity - The capacity of elevators of the hotel
@@ -255,7 +266,9 @@ void getElevatorsCapacityInput(char *hotel_name, int *elevator_capacity)
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that takes the number of people waiting on each floor of the hotel as input and checks if it is in the
-/// range of MIN_NUMBER_OF_PEOPLE_WAITING and MAX_NUMBER_OF_PEOPLE_WAITING.
+/// range of MIN_NUMBER_OF_PEOPLE_WAITING and MAX_NUMBER_OF_PEOPLE_WAITING. If it is, it saves it in the
+/// number_of_people_waiting variable passed as a parameter. Else it asks the user to enter a new number of people
+/// waiting on each floor.
 ///
 /// @param number_of_people_waiting - The number of people waiting on each floor of the hotel
 //
@@ -279,7 +292,9 @@ void getNumberOfPeopleWaitingOnEachFloor(int *number_of_people_waiting)
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that takes the number of floors and the number of people waiting on each floor as input and initializes
-/// the list of people.
+/// the list of people. It asks the user to enter the destination floors of the people on each floor, then creates a
+/// Person struct for each person and saves it in the person_list array. The person_list array is an array of arrays,
+/// where each array represents a floor and contains the people waiting on that floor.
 ///
 /// @param number_of_floors - The number of floors of the hotel
 /// @param number_of_people_waiting - The number of people waiting on each floor of the hotel
@@ -292,7 +307,7 @@ Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiti
 	if (person_list == NULL)
 	{
 		printf("Out of memory! Program terminated!\n");
-		exit(-1);
+		return NULL;
 	}
 	for (int floor = 0; floor < number_of_floors; ++floor)
 	{
@@ -300,9 +315,14 @@ Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiti
 		if (person_list[floor] == NULL)
 		{
 			printf("Out of memory! Program terminated!\n");
-			exit(-1);
+			return NULL;
 		}
 		int *splitInput = getDestinationFloorInput(number_of_floors, floor);
+		if (splitInput == NULL)
+		{
+			printf("Out of memory! Program terminated!\n");
+			return NULL;
+		}
 		for (int guest_on_floor = 0; guest_on_floor < number_of_people_waiting; ++guest_on_floor)
 		{
 			Person person = {floor, splitInput[guest_on_floor], 0, 0};
@@ -317,7 +337,9 @@ Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiti
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A helper function to initialize the list of people that takes the number of floors and the current floor as input
-/// and returns an array of destination floors for the people on the current floor.
+/// and returns an array of destination floors for the people on the current floor. This should help with the
+/// readability of the initializeListOfPeople function. It also checks if the input is valid and asks the user to enter
+/// a new input if it is not.
 ///
 /// @param number_of_floors - The number of floors of the hotel
 /// @param floor - The current floor
@@ -326,7 +348,7 @@ Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiti
 //
 int *getDestinationFloorInput(int number_of_floors, int floor)
 {
-	int *splitInput;
+	int *split_input;
 	int input_size;
 	int errors;
 	do
@@ -334,47 +356,47 @@ int *getDestinationFloorInput(int number_of_floors, int floor)
 		printf("Enter the destination floors of the people [floor: %d]:\n > ", floor);
 		char buffer[100];
 		fgets(buffer, sizeof(buffer), stdin);
-
 		// Remove the trailing newline character if present
 		size_t len = getStringLength(buffer);
 		if (len > 0 && buffer[len - 1] == '\n')
 		{
 			buffer[len - 1] = '\0';
 		}
-		splitInput = splitStringByComma(buffer, &input_size);
-		if (splitInput == NULL)
+		split_input = splitStringByComma(buffer, &input_size);
+		if (split_input == NULL)
 		{
 			printf("Out of memory! Program terminated!\n");
-			exit(-1);
+			return NULL;
 		}
 		errors = 0;
 		for (int i = 0; i < input_size; i++)
 		{
-			if (splitInput[i] == floor)
+			if (split_input[i] == floor)
 			{
 				printf("Wrong input, the destination floor cannot be the current floor!\n");
 				errors++;
 			}
-			else if (splitInput[i] < 0 || splitInput[i] >= number_of_floors)
+			else if (split_input[i] < 0 || split_input[i] >= number_of_floors)
 			{
 				printf("Wrong input, the destination floor %i is out of range (0 to %i)!\n",
-							 splitInput[i], number_of_floors - 1);
+							 split_input[i], number_of_floors - 1);
 				errors++;
 			}
 		}
 		if (errors > 0)
 		{
-			free(splitInput);
-			splitInput = NULL;
+			free(split_input);
+			split_input = NULL;
 		}
 	} while (errors > 0);
-	return splitInput;
+	return split_input;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that takes the number of elevators, the capacity of elevators and the number of floors as input and
-/// initializes the list of elevators.
+/// initializes the list of elevators. It creates an Elevator struct for each elevator and saves it in the elevators
+/// array. It also determines the starting floor and direction of each elevator.
 ///
 /// @param number_of_elevators - The number of elevators of the hotel
 /// @param elevator_capacity - The capacity of elevators of the hotel
@@ -388,7 +410,7 @@ Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, in
 	if (elevators == NULL)
 	{
 		printf("Out of memory! Program terminated!\n");
-		exit(-1);
+		return NULL;
 	}
 	for (int i = 0; i < number_of_elevators; ++i)
 	{
@@ -408,7 +430,7 @@ Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, in
 		if (elevator.person_list_ == NULL)
 		{
 			printf("Out of memory! Program terminated!\n");
-			exit(-1);
+			return NULL;
 		}
 		for (int j = 0; j < elevator_capacity; ++j)
 		{
@@ -421,23 +443,25 @@ Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, in
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that asks the user if they want to see the initial state of the simulation.
+/// A function that asks the user if they want to see the initial state of the simulation. If they do, it prints the
+/// initial state header and then returns 1. If they don't, it returns 0. The main function is then responsible for
+/// printing the initial state.
 ///
 /// @return 1 - Show the initial state
 ///         0 - Don't show the initial state
 //
 int showInitialStateInput()
 {
-	char showInitialState[5];
+	char show_initial_state[5];
 	do
 	{
 		printf("Show the initial state? (\"yes\"/\"no\"):\n > ");
-		scanf("%4s", showInitialState);
+		scanf("%4s", show_initial_state);
 		// empty the buffer
 		while ((getchar()) != '\n');
-	} while (areStringsEqual(showInitialState, "yes") != 1 &&
-					 areStringsEqual(showInitialState, "no") != 1);
-	if (areStringsEqual(showInitialState, "yes"))
+	} while (areStringsEqual(show_initial_state, "yes") != 1 &&
+					 areStringsEqual(show_initial_state, "no") != 1);
+	if (areStringsEqual(show_initial_state, "yes"))
 	{
 		printf("\n=================\n  INITIAL STATE\n=================\n\n");
 		return 1;
@@ -450,7 +474,12 @@ int showInitialStateInput()
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that prints the hotel with the current state of the elevators and the people waiting on each floor.
+/// A function that prints the hotel with the current state of the elevators and the people waiting on each floor. It
+/// calls the printHotelNameDynamic function to print the name of the hotel in the middle of the top line of the hotel.
+/// It calls the printElevatorDecorator function to print the decorator of the hotel. It calls the
+/// printHotelElevators function to print the elevators of the hotel. It calls the printSortedPersonList function to
+/// print the people waiting on each floor of the hotel. This function is dynamic, which allows it to be called on
+/// every step of the simulation.
 ///
 /// @param hotel_name - The name of the hotel
 /// @param number_of_floors - The number of floors of the hotel
@@ -485,7 +514,8 @@ void printHotel(char *hotel_name, int number_of_floors, int number_of_elevators,
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that prints the name of the hotel in the middle of the top line of the hotel.
+/// A function that prints the name of the hotel in the middle of the top line of the hotel. It calculates the number
+/// of minus signs needed to fill the line and then prints the name of the hotel in the middle of the line.
 ///
 /// @param hotel_name - The name of the hotel
 /// @param number_of_elevators - The number of elevators of the hotel
@@ -536,7 +566,8 @@ void printHotelNameDynamic(char *hotel_name, int number_of_elevators)
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that prints the decorator of the hotel.
+/// A function that prints the decorator of the hotel. It has two modes, one for a full line and one for a line with a
+/// gap in the middle. It takes the number of elevators and the mode as input and prints the decorator accordingly.
 ///
 /// @param number_of_elevators - The number of elevators of the hotel
 /// @param full_line - 1 for a full line, 0 for a line with a gap in the middle
@@ -575,7 +606,8 @@ void printElevatorDecorator(int number_of_elevators, int full_line)
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that prints the elevators of the hotel.
+/// A function that prints the elevators of the hotel. Note that this function simply prints the elevator inside the
+/// hotel as a box, not the elevators that are displayed beneath the hotel.
 ///
 /// @param elevators - The list of elevators of the hotel
 /// @param elevator_capacity - The capacity of elevators of the hotel
@@ -596,22 +628,23 @@ void printHotelElevators(const Elevator *elevators, int elevator_capacity, int c
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function asks the user if they want to start the simulation.
+/// A function asks the user if they want to start the simulation. If they do, it returns 1.
+/// If they don't, it returns 0. The main function is then responsible for starting the simulation.
 ///
 /// @return 1 if the user wants to start the simulation
 ///         0 if the user wants to skip the simulation
 //
 int startSimulationInput()
 {
-	char startSimulation[10];
+	char start_simulation[10];
 	do
 	{
 		printf("Start the simulation? (\"start\"/\"skip\"):\n > ");
-		scanf("%9s", startSimulation);
+		scanf("%9s", start_simulation);
 		while ((getchar()) != '\n');
-	} while (areStringsEqual(startSimulation, "start") != 1 &&
-					 areStringsEqual(startSimulation, "skip") != 1);
-	if (areStringsEqual(startSimulation, "start"))
+	} while (areStringsEqual(start_simulation, "start") != 1 &&
+					 areStringsEqual(start_simulation, "skip") != 1);
+	if (areStringsEqual(start_simulation, "start"))
 	{
 		return 1;
 	}
@@ -623,36 +656,40 @@ int startSimulationInput()
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that asks the user if they want to see all steps of the simulation or just the end result.
+/// A function that asks the user if they want to see all steps of the simulation or just the end result. If they want
+/// to see all steps, it returns 1. If they want to see just the end result, it returns 0. The main function is then
+/// responsible for printing the steps of the simulation.
 ///
 /// @return 1 if the user wants to see all steps of the simulation
 ///         0 if the user wants to see just the end result
 //
 int shouldPrintAllSteps()
 {
-	int printSteps = 0;
+	int print_steps = 0;
 	while (1)
 	{
 		printf("Show all steps of the simulation? (\"all steps\"/\"end result\"):\n > ");
-		char showAllSteps[20];
-		scanf(" %[^\n]19s", showAllSteps);
+		char show_all_steps[20];
+		scanf(" %[^\n]19s", show_all_steps);
 		while ((getchar()) != '\n');
-		if (areStringsEqual(showAllSteps, "all steps"))
+		if (areStringsEqual(show_all_steps, "all steps"))
 		{
-			printSteps = 1;
+			print_steps = 1;
 			break;
 		}
-		else if (areStringsEqual(showAllSteps, "end result"))
+		else if (areStringsEqual(show_all_steps, "end result"))
 		{
 			break;
 		}
 	}
-	return printSteps;
+	return print_steps;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that checks if all guests have reached their destination.
+/// A function that checks if all guests have reached their destination. It loops through the list of people waiting on
+/// each floor and checks if they have reached their destination floor. If they have, it returns 1. If they haven't, it
+/// returns 0.
 ///
 /// @param person_list - The list of people waiting on each floor of the hotel
 /// @param number_of_people - The number of people waiting on each floor of the hotel
@@ -703,8 +740,8 @@ void simulationStep(int number_of_floors, int number_of_elevators, Person **pers
 ///
 /// A function that moves each elevator in their respective direction.
 ///
-/// @param number_of_elevators
-/// @param elevators
+/// @param number_of_elevators - The number of elevators of the hotel
+/// @param elevators - The list of elevators of the hotel
 //
 void moveElevator(int number_of_elevators, Elevator *elevators)
 {
@@ -716,7 +753,11 @@ void moveElevator(int number_of_elevators, Elevator *elevators)
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that removes people from the elevator if they have reached their destination floor
+/// A function that removes people from the elevator if they have reached their destination floor. It loops through the
+/// list of people in the elevator and checks if they have reached their destination floor. If they have, it removes
+/// them from the elevator and sets their is_inside_elevator_ flag to 0 and their has_reached_destination_ flag to 1.
+/// Note that they are not deleted, they are simply removed from the elevator. This is intentional, as it allows us to
+/// keep track of the people that have reached their destination and print them at the end of the simulation.
 ///
 /// @param number_of_elevators - The number of elevators of the hotel
 /// @param elevators - The list of elevators of the hotel
@@ -749,7 +790,10 @@ void removePeopleFromElevator(int number_of_elevators, Elevator *elevators, int 
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that adds people to the elevator if they are on the same floor as the elevator and are going in the same
-/// direction_ as the elevator.
+/// direction as the elevator. It loops through the list of people waiting on each floor and adds them to the elevator
+/// if they are on the same floor as the elevator and are going in the same direction as the elevator. It calls the
+/// getBestNextPersonIndex function to get the index of the best next person to pick up. It calls the
+/// addPersonToElevator function to add the person to the elevator.
 ///
 /// @param number_of_elevators - The number of elevators of the hotel
 /// @param number_of_guests - The number of people waiting on each floor of the hotel
@@ -777,8 +821,9 @@ void fillElevatorWithPeople(int number_of_elevators, int number_of_guests, int e
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that loops through the list of people waiting on each floor and adds them to the elevator if they are on
-/// the same floor as the elevator and are going in the same direction_ as the elevator.
+/// A function that loops through the available elevator spots and adds the person to the elevator if there is an
+/// available spot. It also sets the is_inside_elevator_ flag of the person to 1. If there is no available spot, it
+/// does nothing.
 ///
 /// @param elevator_capacity - The capacity of elevators of the hotel
 /// @param elevators - The list of elevators of the hotel
@@ -856,7 +901,9 @@ int getBestNextPersonIndex(Person **person_list, int number_of_people, int numbe
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that changes the direction_ of the elevator if it is at the top or bottom floor.
+/// A function that changes the direction_ of the elevator if it is at the top or bottom floor. If it is at the top
+/// floor, it changes the direction_ to -1. If it is at the bottom floor, it changes the direction_ to 1. This has
+/// also been shortly described when creating the struct at the top of this file.
 ///
 /// @param number_of_floors - The number of floors of the hotel
 /// @param number_of_elevators - The number of elevators of the hotel
@@ -880,7 +927,9 @@ void changeElevatorDirection(int number_of_floors, int number_of_elevators, Elev
 //---------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that prints the current state of the elevators. It prints the Index of the elevator and the list of
-/// destination floors of the people inside the elevator.
+/// destination floors of the people inside the elevator. It calls the printSortedElevatorPersonList function to print
+/// the list of destination floors of the people inside the elevator dynamically. This ensures that the list of
+/// destination floors is always sorted in ascending order.
 ///
 /// @param elevator - The list of elevators of the hotel
 /// @param number_of_elevators - The number of elevators of the hotel
@@ -904,7 +953,8 @@ void printElevatorState(Elevator *elevator, int number_of_elevators, int elevato
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A helper function that checks if all elevators are empty.
+/// A helper function that checks if all elevators are empty. It loops through the list of elevators and checks if they
+/// are empty. If they are, it returns 1. If they are not, it returns 0.
 ///
 /// @param elevator - The list of elevators of the hotel
 /// @param number_of_elevators - The number of elevators of the hotel
@@ -928,7 +978,10 @@ int areAllElevatorsEmpty(const Elevator *elevator, int number_of_elevators, int 
 
 // --------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that prints the people waiting on a specific floor in a sorted manner.
+/// A function that prints the people waiting on a specific floor in a sorted manner. It starts by checking the amount
+/// of people that have reached their destination floor or are inside an elevator. It then uses that number to loop
+/// through the list of people again and print them as a "-". Then, trough a subtraction, it calculates the number of
+/// people that are still waiting on the floor and prints them in ascending order.
 ///
 /// @param person_list_per_floor - The list of people waiting on a specific floor
 /// @param number_of_people - The number of people waiting on a specific floor
@@ -1008,6 +1061,16 @@ void printSortedPersonList(Person *person_list_per_floor, int number_of_people)
 	}
 }
 
+// --------------------------------------------------------------------------------------------------------------------
+///
+/// A function that prints the people inside the elevator in a sorted manner. It starts by checking the amount of people
+/// that have reached their destination floor. It then uses that number to loop through the list of people again and
+/// print them as a "-". Then, trough a subtraction, it calculates the number of people that are still inside the
+/// elevator and prints them in ascending order.
+///
+/// @param person_list_per_floor - The list of people waiting on a specific floor
+/// @param number_of_people - The number of people waiting on a specific floor
+//
 void printSortedElevatorPersonList(Person **person_list_per_floor, int number_of_people)
 {
 	printf("(");
@@ -1080,7 +1143,9 @@ void printSortedElevatorPersonList(Person **person_list_per_floor, int number_of
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// String.h replacement function. Compares two strings and returns 1 if they are equal and 0 if they are not.
+/// String.h replacement function. Compares two strings and returns 1 if they are equal and 0 if they are not. It
+/// converts the strings to lowercase before comparing them. It uses the ASCII table to convert the characters to
+/// lowercase.
 ///
 /// @param first_string - The first string
 /// @param second_string - The second string to compare with the first string
@@ -1119,7 +1184,11 @@ int areStringsEqual(char *first_string, char *second_string)
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that splits a string by comma and returns an array of integers.
+/// A function that splits a string by comma and returns an array of integers. It takes the input string and a pointer
+/// to the size of the array as input. It loops through the input string and converts each substring to an integer. It
+/// then saves the integers in a fixed-size array. It then allocates a new array with the exact size needed and copies
+/// the integers from the fixed-size array to the new array. It then returns the new array. While doing this, it also
+/// updates the size of the array that was passed as a pointer.
 ///
 /// @param input_string - The string to split
 /// @param size - The size of the array
@@ -1129,7 +1198,6 @@ int *splitStringByComma(char *input_string, int *size)
 {
 	int array[MAX_SPLITSTRING_ARRAY_SIZE]; // Fixed-size array
 	*size = 0; // Counter for the number of integers
-
 	while (*input_string != '\0')
 	{
 		char *end_ptr;
@@ -1151,7 +1219,6 @@ int *splitStringByComma(char *input_string, int *size)
 		}
 		input_string = end_ptr;
 	}
-
 	// Allocate a new array with the exact size needed
 	int *final_array = (int *)malloc(*size * sizeof(int));
 	if (final_array == NULL)
@@ -1159,21 +1226,19 @@ int *splitStringByComma(char *input_string, int *size)
 		fprintf(stderr, "Memory allocation error\n");
 		return NULL;
 	}
-
 	// Copy the integers from the fixed-size array to the new array
 	for (int i = 0; i < *size; i++)
 	{
 		final_array[i] = array[i];
 	}
-
 	return final_array;
 }
 
 
-
 //---------------------------------------------------------------------------------------------------------------------
 ///
-/// A function that returns the length of a string.
+/// A function that returns the length of a string. It takes a string as input and loops through it until it reaches
+/// the null terminator. It then returns the length of the string.
 ///
 /// @param string - The string to get the length of
 /// @return length - The length of the string
@@ -1191,6 +1256,7 @@ int getStringLength(const char *string)
 // --------------------------------------------------------------------------------------------------------------------
 ///
 /// A function that frees the allocated memory. It frees the memory for the list of people and the list of elevators.
+///
 /// @param number_of_floors - The number of floors of the hotel
 /// @param person_list - The list of people waiting on each floor of the hotel
 /// @param elevators - The list of elevators of the hotel
