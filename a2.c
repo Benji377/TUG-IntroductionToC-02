@@ -284,10 +284,18 @@ void getNumberOfPeopleWaitingOnEachFloor(int *number_of_people_waiting)
 //
 Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiting)
 {
-	Person **person_list = (Person**) malloc(number_of_floors * sizeof(Person *));
+	Person **person_list = malloc(number_of_floors * sizeof(Person));
+	if (person_list == NULL)
+	{
+		exit(-1);
+	}
 	for (int floor = 0; floor < number_of_floors; ++floor)
 	{
 		person_list[floor] = malloc(number_of_people_waiting * sizeof(Person));
+		if (person_list[floor] == NULL)
+		{
+			exit(-1);
+		}
 		int *splitInput = getDestinationFloorInput(number_of_floors, floor);
 		for (int guest_on_floor = 0; guest_on_floor < number_of_people_waiting; ++guest_on_floor)
 		{
@@ -361,6 +369,10 @@ int* getDestinationFloorInput(int number_of_floors, int floor)
 Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, int number_of_floors)
 {
 	Elevator *elevators = malloc(number_of_elevators * sizeof(Elevator));
+	if (elevators == NULL)
+	{
+		exit(-1);
+	}
 	for (int i = 0; i < number_of_elevators; ++i)
 	{
 		Elevator elevator = {elevator_capacity, 0, 1, NULL};
@@ -376,6 +388,10 @@ Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, in
 			elevator.direction_ = 1;
 		}
 		elevator.person_list_ = malloc(elevator_capacity * sizeof(Person));
+		if (elevator.person_list_ == NULL)
+		{
+			exit(-1);
+		}
 		for (int j = 0; j < elevator_capacity; ++j)
 		{
 			elevator.person_list_[j] = NULL;
