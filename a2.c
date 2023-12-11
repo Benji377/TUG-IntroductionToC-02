@@ -1281,14 +1281,21 @@ int getStringLength(const char* string)
 //
 void freeAllocatedMemory(int number_of_floors, int number_of_elevators, Person** person_list, Elevator* elevators)
 {
-	for (int i = 0; i < number_of_floors; ++i)
+	if (person_list != NULL)
 	{
-		free(person_list[i]);
+		for (int i = 0; i < number_of_floors; ++i)
+		{
+			free(person_list[i]);
+		}
 	}
 	free(person_list);
-	for (int i = 0; i < number_of_elevators; ++i)
+
+	if (elevators != NULL)
 	{
-		free(elevators[i].person_list_);
+		for (int i = 0; i < number_of_elevators; ++i)
+		{
+			free(elevators[i].person_list_);
+		}
 	}
 	free(elevators);
 }
