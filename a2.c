@@ -79,6 +79,7 @@ const int MAX_ELEVATOR_CAPACITY = 9;
 const int MIN_ELEVATOR_CAPACITY = 1;
 const int MAX_NUMBER_OF_PEOPLE_WAITING = 20;
 const int MIN_NUMBER_OF_PEOPLE_WAITING = 2;
+#define MAX_SPLITSTRING_ARRAY_SIZE 40 // Define a maximum size for the array
 
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -356,10 +357,15 @@ int *getDestinationFloorInput(int number_of_floors, int floor)
 			}
 			else if (splitInput[i] < 0 || splitInput[i] >= number_of_floors)
 			{
-				printf("Wrong input, the destination floor %i is out of range (0 to %i)! \n",
+				printf("Wrong input, the destination floor %i is out of range (0 to %i)!\n",
 							 splitInput[i], number_of_floors - 1);
 				errors++;
 			}
+		}
+		if (errors > 0)
+		{
+			free(splitInput);
+			splitInput = NULL;
 		}
 	} while (errors > 0);
 	return splitInput;
@@ -1121,8 +1127,9 @@ int areStringsEqual(char *first_string, char *second_string)
 //
 int *splitStringByComma(char *input_string, int *size)
 {
-	int *array = NULL;
-	*size = 0;
+	int array[MAX_SPLITSTRING_ARRAY_SIZE]; // Fixed-size array
+	*size = 0; // Counter for the number of integers
+
 	while (*input_string != '\0')
 	{
 		char *end_ptr;
@@ -1130,17 +1137,8 @@ int *splitStringByComma(char *input_string, int *size)
 		if (input_string == end_ptr)
 		{
 			fprintf(stderr, "Error converting string to integer\n");
-			free(array);
 			return NULL;
 		}
-		int *temp_array = realloc(array, (*size + 1) * sizeof(int));
-		if (temp_array == NULL)
-		{
-			fprintf(stderr, "Memory allocation error\n");
-			free(array);
-			return NULL;
-		}
-		array = temp_array;
 		array[*size] = (int) value;
 		(*size)++;
 		while (*end_ptr && *end_ptr != ',')
@@ -1153,8 +1151,24 @@ int *splitStringByComma(char *input_string, int *size)
 		}
 		input_string = end_ptr;
 	}
-	return array;
+
+	// Allocate a new array with the exact size needed
+	int *final_array = (int *)malloc(*size * sizeof(int));
+	if (final_array == NULL)
+	{
+		fprintf(stderr, "Memory allocation error\n");
+		return NULL;
+	}
+
+	// Copy the integers from the fixed-size array to the new array
+	for (int i = 0; i < *size; i++)
+	{
+		final_array[i] = array[i];
+	}
+
+	return final_array;
 }
+
 
 
 //---------------------------------------------------------------------------------------------------------------------
