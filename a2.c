@@ -41,7 +41,7 @@ int *getDestinationFloorInput(int number_of_floors, int floor);
 Elevator *initializeElevators(int number_of_elevators, int elevator_capacity, int number_of_floors);
 int showInitialStateInput();
 void printHotel(char *hotel_name, int number_of_floors, int number_of_elevators,
-								Person **person_list, int number_of_people, Elevator *elevators, int elevator_capacity);
+                Person **person_list, int number_of_people, Elevator *elevators, int elevator_capacity);
 void printHotelNameDynamic(char *hotel_name, int number_of_elevators);
 void printHotelElevators(const Elevator *elevators, int elevator_capacity, int current_floor, int current_elevator);
 void printHotelPersonList(Person *const *person_list, int number_of_people, int current_floor, int current_guest);
@@ -50,11 +50,11 @@ int startSimulationInput();
 int shouldPrintAllSteps();
 int allGuestsHaveReachedDestination(Person **person_list, int number_of_people, int number_of_floors);
 void simulationStep(int number_of_floors, int number_of_elevators, Person **person_list, int number_of_guests,
-										Elevator *elevators, int elevator_capacity, int show_steps);
+										Elevator *elevators, int elevator_capacity);
 void moveElevator(int number_of_elevators, Elevator *elevators);
-void removePeopleFromElevator(int number_of_elevators, Elevator *elevators, int elevator_capacity,  int show_steps);
+void removePeopleFromElevator(int number_of_elevators, Elevator *elevators, int elevator_capacity);
 void fillElevatorWithPeople(int number_of_elevators, int number_of_guests, int elevator_capacity,
-														Elevator *elevators, Person **person_list, int number_of_floors);
+                            Elevator *elevators, Person **person_list, int number_of_floors);
 void addPersonToElevator(int elevator_capacity, Elevator *elevators, Person **person_list,
 												 int elevator_index, int person_index);
 int getBestNextPersonIndex(Person **person_list, int number_of_people, int number_of_floors,
@@ -128,12 +128,12 @@ int main()
 			}
 			// Calculates the next step of the simulation
 			simulationStep(number_of_floors, number_of_elevators, person_list,number_of_people_waiting,
-										 elevator_list, elevator_capacity, print_all_steps);
+										 elevator_list, elevator_capacity);
 			if (print_all_steps)
 			{
 				// Prints the current state of the simulation
-				printHotel(hotel_name, number_of_floors, number_of_elevators, person_list, number_of_people_waiting,
-									 elevator_list, elevator_capacity);
+				printHotel(hotel_name, number_of_floors, number_of_elevators, person_list,
+                           number_of_people_waiting,elevator_list, elevator_capacity);
 				printElevatorState(elevator_list, number_of_elevators, elevator_capacity);
 			}
 			// Moves each elevator in their respective direction
@@ -308,6 +308,7 @@ Person **initializeListOfPeople(int number_of_floors, int number_of_people_waiti
 			person_list[floor][guest_on_floor] = person;
 		}
 		free(splitInput);
+        splitInput = NULL;
 	}
 	return person_list;
 }
@@ -330,18 +331,17 @@ int* getDestinationFloorInput(int number_of_floors, int floor)
 	do
 	{
 		printf("Enter the destination floors of the people [floor: %d]:\n > ", floor);
-		char buffer[100];
-		scanf("%99s", buffer);
-		// empty the buffer
-		while ((getchar()) != '\n');
+        char buffer[100];
+        fgets(buffer, sizeof(buffer), stdin);
+
+        // Remove the trailing newline character if present
+        size_t len = getStringLength(buffer);
+        if (len > 0 && buffer[len - 1] == '\n')
+        {
+            buffer[len - 1] = '\0';
+        }
 		splitInput = splitStringByComma(buffer, &input_size);
 		errors = 0;
-
-		//if (input_size != number_of_floors)
-		//{
-		//	printf("Wrong input, the number of destination floors must be %i!\n", number_of_floors);
-		//	errors++;
-		//}
 		for (int i = 0; i < input_size; i++)
 		{
 			if (splitInput[i] == floor)
@@ -712,11 +712,12 @@ int allGuestsHaveReachedDestination(Person **person_list, int number_of_people, 
 /// @param show_steps - 1 if the user wants to see all steps of the simulation
 //
 void simulationStep(int number_of_floors, int number_of_elevators, Person **person_list, int number_of_guests,
-										Elevator *elevators, int elevator_capacity, int show_steps)
+										Elevator *elevators, int elevator_capacity)
 {
 	changeElevatorDirection(number_of_floors, number_of_elevators, elevators);
-	removePeopleFromElevator(number_of_elevators, elevators, elevator_capacity, show_steps);
-	fillElevatorWithPeople(number_of_elevators, number_of_guests, elevator_capacity, elevators, person_list, number_of_floors);
+	removePeopleFromElevator(number_of_elevators, elevators, elevator_capacity);
+	fillElevatorWithPeople(number_of_elevators, number_of_guests, elevator_capacity,
+                           elevators, person_list, number_of_floors);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -743,7 +744,7 @@ void moveElevator(int number_of_elevators, Elevator *elevators)
 /// @param elevator_capacity - The capacity of elevators of the hotel
 /// @param show_steps - 1 if the user wants to see all steps of the simulation
 //
-void removePeopleFromElevator(int number_of_elevators, Elevator *elevators, int elevator_capacity, int show_steps)
+void removePeopleFromElevator(int number_of_elevators, Elevator *elevators, int elevator_capacity)
 {
 	for (int i = 0; i < number_of_elevators; ++i)
 	{
@@ -757,11 +758,8 @@ void removePeopleFromElevator(int number_of_elevators, Elevator *elevators, int 
 			{
 				elevators[i].person_list_[j]->is_inside_elevator_ = 0;
 				elevators[i].person_list_[j]->has_reached_destination_ = 1;
-				if (show_steps)
-				{
 					printf("A person reached their destination floor %d with elevator %d.\n",
 								 elevators[i].current_floor_, i);
-				}
 				elevators[i].person_list_[j] = NULL;
 				elevators[i].capacity_++;
 			}
@@ -788,7 +786,7 @@ void fillElevatorWithPeople(int number_of_elevators, int number_of_guests, int e
 		for (int j = 0; j < number_of_guests; ++j)
 		{
 			int person_index = getBestNextPersonIndex(person_list, number_of_guests, number_of_floors,
-																								elevators[i].current_floor_, elevators[i].direction_);
+                                                      elevators[i].current_floor_, elevators[i].direction_);
 			if (person_index == -1)
 			{
 				continue;
@@ -824,7 +822,8 @@ void addPersonToElevator(int elevator_capacity, Elevator *elevators, Person **pe
 	}
 }
 
-int getBestNextPersonIndex(Person **person_list, int number_of_people, int number_of_floors, int current_floor, int elevator_direction)
+int getBestNextPersonIndex(Person **person_list, int number_of_people, int number_of_floors,
+                           int current_floor, int elevator_direction)
 {
 	int best_next_person_index = -1;
 	int best_next_person_distance = number_of_floors;
@@ -1025,43 +1024,49 @@ int areStringsEqual(char *first_string, char *second_string)
 //
 int *splitStringByComma(char *input_string, int *size)
 {
-	int* array = NULL;  // Initialize the array to NULL
-	*size = 0;          // Initialize the size of the array to 0
-	while (*input_string)
-	{
-		// Use strtol to extract integers from the string
-		char *end_ptr;
-		long value = strtol(input_string, &end_ptr, 10);
-		if (input_string == end_ptr)
-		{
-			// Conversion failed
-			fprintf(stderr, "Error converting string to integer\n");
-			exit(-1);
-		}
-		(*size)++;
-		// Reallocate memory for the array
-		array = realloc(array, (*size) * sizeof(int));
-		if (array == NULL)
-		{
-			exit(-1);
-		}
-		array[*size - 1] = (int)value;
+    int *array = NULL;
+    *size = 0;
 
-		// Move to the next comma or the end of the string
-		while (*end_ptr && *end_ptr != ',')
-		{
-			end_ptr++;
-		}
-		if (*end_ptr == '\0')
-		{
-			break;  // Exit the loop if the end of the string is reached
-		}
-		// Move past the comma
-		end_ptr++;
-		input_string = end_ptr;
-	}
-	return array;
+    while (*input_string != '\0')
+    {
+        char *end_ptr;
+        long value = strtol(input_string, &end_ptr, 10);
+
+        if (input_string == end_ptr)
+        {
+            fprintf(stderr, "Error converting string to integer\n");
+            free(array);
+            return NULL;
+        }
+
+        int *temp_array = realloc(array, (*size + 1) * sizeof(int));
+        if (temp_array == NULL)
+        {
+            fprintf(stderr, "Memory allocation error\n");
+            free(array);
+            return NULL;
+        }
+
+        array = temp_array;
+        array[*size] = (int)value;
+        (*size)++;
+
+        while (*end_ptr && *end_ptr != ',')
+        {
+            end_ptr++;
+        }
+
+        if (*end_ptr == ',')
+        {
+            end_ptr++;
+        }
+
+        input_string = end_ptr;
+    }
+
+    return array;
 }
+
 
 //---------------------------------------------------------------------------------------------------------------------
 ///
