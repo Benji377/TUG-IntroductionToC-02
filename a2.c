@@ -175,7 +175,8 @@ void getHotelNameInput(char *hotel_name)
 				 "Welcome to the\n"
 				 "Elevator Simulation Program!\n\n");
 	printf("Enter the name of the hotel:\n > ");
-	scanf("%s", hotel_name);
+	fgets(hotel_name, 50, stdin);
+	hotel_name[getStringLength(hotel_name) - 1] = '\0';
 	for (int i = 0; hotel_name[i] != '\0'; ++i)
 	{
 		if (hotel_name[i] >= 'a' && hotel_name[i] <= 'z')
@@ -199,6 +200,7 @@ void getNumberOfFloorsInput(char *hotel_name, int *number_of_floors)
 	{
 		printf("Enter the number of floors in hotel %s:\n > ", hotel_name);
 		scanf("%i", number_of_floors);
+		while ((getchar()) != '\n');
 		if ((*number_of_floors) < MIN_NUMBER_OF_FLOORS || (*number_of_floors) > MAX_NUMBER_OF_FLOORS)
 		{
 			printf("Wrong input, the number of floors must be between %i and %i!\n", MIN_NUMBER_OF_FLOORS,
@@ -221,6 +223,7 @@ void getNumberOfElevatorsInput(char *hotel_name, int *number_of_elevators)
 	{
 		printf("Enter the number of elevators in hotel %s:\n > ", hotel_name);
 		scanf("%i", number_of_elevators);
+		while ((getchar()) != '\n');
 		if ((*number_of_elevators) < MIN_NUMBER_OF_ELEVATORS || (*number_of_elevators) > MAX_NUMBER_OF_ELEVATORS) {
 			printf("Wrong input, the number of elevators must be between %i and %i!\n", MIN_NUMBER_OF_ELEVATORS,
 						 MAX_NUMBER_OF_ELEVATORS);
@@ -242,6 +245,7 @@ void getElevatorsCapacityInput(char *hotel_name, int *elevator_capacity)
 	{
 		printf("Enter the capacity of elevators in hotel %s:\n > ", hotel_name);
 		scanf("%i", elevator_capacity);
+		while ((getchar()) != '\n');
 		if ((*elevator_capacity) < MIN_ELEVATOR_CAPACITY || (*elevator_capacity) > MAX_ELEVATOR_CAPACITY)
 		{
 			printf("Wrong input, the capacity of elevators must be between %i and %i person(s)!\n",
@@ -262,6 +266,7 @@ void getNumberOfPeopleWaitingOnEachFloor(int *number_of_people_waiting)
 	do {
 		printf("Enter the number of people waiting on each floor:\n > ");
 		scanf("%i", number_of_people_waiting);
+		while ((getchar()) != '\n');
 		if ((*number_of_people_waiting) < MIN_NUMBER_OF_PEOPLE_WAITING ||
 				(*number_of_people_waiting) > MAX_NUMBER_OF_PEOPLE_WAITING)
 		{
@@ -413,7 +418,7 @@ int showInitialStateInput()
 	char showInitialState[5];
 	do {
 		printf("Show the initial state? (\"yes\"/\"no\"):\n > ");
-		scanf("%s", showInitialState);
+		scanf("%4s", showInitialState);
 		// empty the buffer
 		while ((getchar()) != '\n');
 	} while (areStringsEqual(showInitialState, "yes") != 1 &&
@@ -1032,11 +1037,14 @@ int *splitStringByComma(char *input_string, int *size)
 			// Conversion failed
 			fprintf(stderr, "Error converting string to integer\n");
 			exit(-1);
-			break;
 		}
 		(*size)++;
 		// Reallocate memory for the array
 		array = realloc(array, (*size) * sizeof(int));
+		if (array == NULL)
+		{
+			exit(-1);
+		}
 		array[*size - 1] = (int)value;
 
 		// Move to the next comma or the end of the string
