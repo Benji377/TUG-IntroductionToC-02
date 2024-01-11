@@ -330,12 +330,22 @@ Person** initializeListOfPeople(int number_of_floors, int number_of_people_waiti
 		person_list[floor] = malloc(number_of_people_waiting * sizeof(Person));
 		if (person_list[floor] == NULL)
 		{
+			for (int i = 0; i < floor; ++i)
+			{
+				free(person_list[i]);
+			}
+			free(person_list);
 			printf("Out of memory! Program terminated!\n");
 			return NULL;
 		}
 		int* splitInput = getDestinationFloorInput(number_of_floors, floor);
 		if (splitInput == NULL)
 		{
+			for (int i = 0; i < number_of_floors; ++i)
+			{
+				free(person_list[i]);
+			}
+			free(person_list);
 			printf("Out of memory! Program terminated!\n");
 			return NULL;
 		}
@@ -1222,7 +1232,7 @@ int* splitStringByComma(char* input_string, int* size)
 		long value = strtol(input_string, &end_ptr, 10);
 		if (input_string == end_ptr)
 		{
-			fprintf(stderr, "Error converting string to integer\n");
+			printf("Error converting string to integer\n");
 			return NULL;
 		}
 		array[*size] = (int) value;
@@ -1241,7 +1251,7 @@ int* splitStringByComma(char* input_string, int* size)
 	int* final_array = (int*)malloc(*size * sizeof(int));
 	if (final_array == NULL)
 	{
-		fprintf(stderr, "Memory allocation error\n");
+		printf("Out of memory! Program terminated!\n");
 		return NULL;
 	}
 	// Copy the integers from the fixed-size array to the new array
